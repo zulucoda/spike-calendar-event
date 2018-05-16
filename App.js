@@ -9,8 +9,12 @@ import {
   Platform,
   StyleSheet,
   Text,
-  View
+  Button,
+  View,
+  Alert
 } from 'react-native';
+import moment from 'moment';
+import RNCalendarEvents from 'react-native-calendar-events';
 
 const instructions = Platform.select({
   ios: 'Press Cmd+R to reload,\n' +
@@ -20,22 +24,83 @@ const instructions = Platform.select({
 });
 
 type Props = {};
+
+const utcDateToString = (momentInUTC: moment): string => {
+    return moment.utc(momentInUTC).toISOString();
+};
+
+const showAlert = (alertTitle: string, alertMessage: string) => {
+    Alert.alert(alertTitle, alertMessage, [
+        {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
+        {text: 'Ok', onPress: () => console.log('Ok Pressed')}
+    ]);
+};
+
 export default class App extends Component<Props> {
   render() {
+
+    const eventTitle = 'FAISE Review Appointment';
+    const nowUTC = moment.utc();
+
+      RNCalendarEvents.authorizationStatus().then(item => {
+          showAlert('Calendar Auth Status', `message: ${item}`);
+      });
+
     return (
       <View style={styles.container}>
         <Text style={styles.welcome}>
           Welcome to React Native!
         </Text>
         <Text style={styles.instructions}>
-          To get started, edit App.js
+          Calendar Events
         </Text>
-        <Text style={styles.instructions}>
-          {instructions}
+        <Text style={styles.welcome}>Event title: {eventTitle}</Text>
+        <Text>
+          date:{' '}
+            {moment
+                .utc(nowUTC)
+                .local()
+                .format('lll')}
         </Text>
+
+        <Button
+            onPress={() => {
+                App.addToCalendar(eventTitle, nowUTC);
+            }}
+            title="Add to calendar"
+        />
       </View>
     );
   }
+
+  static addToCalendar = (title: string, startDateUTC: moment) => {
+      const eventDetails = {
+        notes: 'Remember to call client about FAISE review.',
+        startDate: utcDateToString(startDateUTC),
+        endDate: utcDateToString(moment.utc(startDateUTC).add(1, 'hours'))
+      };
+
+      //showAlert('eventDetails:', JSON.stringify(eventDetails));
+
+      RNCalendarEvents.saveEvent(title, eventDetails).then((item) => {
+          console.log("**** EVENT SAVED ****");
+          console.log(`${JSON.stringify(item)}`);
+          showAlert('Calendar added successfully', `message:${item}`);
+      }).catch((err) => {
+          showAlert('Add To Calendar Failed', `error message: ${err.message}`);
+      });
+
+      // RNCalendarEvents.saveEvent('Title of event', {
+      //     startDate: '2016-08-19T19:26:00.000Z',
+      //     endDate: '2017-08-19T19:26:00.000Z'
+      // }).then((item) => {
+      //     console.log("**** EVENT SAVED ****");
+      //     console.log(`${JSON.stringify(item)}`);
+      //     showAlert('Calendar added successfully', `message:${item}`);
+      // }).catch((err) => {
+      //     showAlert('Add To Calendar Failed', `error message: ${err.message}`);
+      // });
+  };
 }
 
 const styles = StyleSheet.create({
