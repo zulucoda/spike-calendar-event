@@ -37,14 +37,33 @@ const showAlert = (alertTitle: string, alertMessage: string) => {
 };
 
 export default class App extends Component<Props> {
+
+    componentDidMount() {
+        RNCalendarEvents.authorizationStatus()
+            .then(status => {
+                this.setState({authorizationStatus: status});
+                showAlert('Calendar Auth Status', `message: ${status}`);
+
+                if(status == 'undetermined'){
+                    RNCalendarEvents.authorizeEventStore()
+                        .then((res) => {
+                            if(res == "authorized"){
+                                this.setState({authorizationStatus: res});
+                            }
+                            showAlert('Calendar AuthStore Status', `message: ${status}`);
+                        });
+                }
+            })
+            .catch(error => {
+                // handle error
+                showAlert('Calendar Auth and AuthStore Status', `message: ${error.message}`);
+            });
+    }
+
   render() {
 
-    const eventTitle = 'FAISE Review Appointment';
+    const eventTitle = 'FAIS Review Appointment';
     const nowUTC = moment.utc();
-
-      RNCalendarEvents.authorizationStatus().then(item => {
-          showAlert('Calendar Auth Status', `message: ${item}`);
-      });
 
     return (
       <View style={styles.container}>
